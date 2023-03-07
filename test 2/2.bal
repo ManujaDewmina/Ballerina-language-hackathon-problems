@@ -13,7 +13,6 @@ function processFuelRecords(string inputFilePath, string outputFilePath) returns
 
     Record[] RecordArray = [];
 
-    // Convert the input stream of records to an array of records.
     foreach string[] row in input {
         Record Record_a =  {employee_id: check int:fromString(row[0]),
                             odometer_reading: check int:fromString(row[1]),
@@ -24,7 +23,6 @@ function processFuelRecords(string inputFilePath, string outputFilePath) returns
 
     int[] uniqueID = [];
 
-    //find the unique employee IDs
     foreach Record record_b in RecordArray {
         boolean isDuplicate = false;
         foreach int j in uniqueID {
@@ -38,7 +36,6 @@ function processFuelRecords(string inputFilePath, string outputFilePath) returns
         }
     }
     
-    //Details for each employee ID
     string[][] rows = [];
     foreach int i in uniqueID {
         int gas_fill_up_count = 0;
@@ -61,6 +58,14 @@ function processFuelRecords(string inputFilePath, string outputFilePath) returns
         //add the row to the rows array
         rows.push([string `${i}`, string `${gas_fill_up_count}`, string `${total_fuel_cost}`, string `${total_gallons}`, string `${total_miles_accrued}`]);
     }
-    //write the rows array to the output file
     check io:fileWriteCsv(outputFilePath, rows);
+}
+
+public function main() {
+    string inputFilePath = "./resources/example01_input.csv";
+    string outputFilePath = "./resources/example01_output_test.csv";
+    error? processFuelRecordsResult = processFuelRecords(inputFilePath,outputFilePath);
+    if processFuelRecordsResult is error {
+        io:println("Error occurred while processing fuel records: ", processFuelRecordsResult);
+    }
 }

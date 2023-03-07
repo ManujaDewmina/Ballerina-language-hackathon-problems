@@ -30,7 +30,7 @@ The output file should contain an entry for each employee, sorted in ascending o
 
 | Column name      | Ballerina type |
 | ----------- | ----------- |
-| employee_id      | `int`       |
+| employee_id        | `int`       |
 | gas_fill_up_count   | `int`        |
 | total_fuel_cost(USD)   | `decimal` |
 | total_gallons  |`decimal`|
