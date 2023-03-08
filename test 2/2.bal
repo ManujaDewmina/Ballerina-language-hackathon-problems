@@ -1,69 +1,37 @@
 import ballerina/io;
 
 type Record record {
-    int employee_id;
-    int odometer_reading;
+    int employeeId;
+    int odometerReading;
     float gallons;
-    float gas_price;
+    float gasPrice;
 };
 
 function processFuelRecords(string inputFilePath, string outputFilePath) returns error? {
-    // Read the CSV file as a stream of records.
-    string[][] input = check io:fileReadCsv(inputFilePath);
-
-    Record[] RecordArray = [];
-
-    foreach string[] row in input {
-        Record Record_a =  {employee_id: check int:fromString(row[0]),
-                            odometer_reading: check int:fromString(row[1]),
-                            gallons : check float:fromString(row[2]),
-                            gas_price: check float:fromString(row[3])};
-        RecordArray.push(Record_a);
-    }
-
-    int[] uniqueID = [];
-
-    foreach Record record_b in RecordArray {
-        boolean isDuplicate = false;
-        foreach int j in uniqueID {
-            if (record_b.employee_id == j) {
-                isDuplicate = true;
-                break;
-            }
-        }
-        if (!isDuplicate) {
-            uniqueID.push(record_b.employee_id);
-        }
-    }
+    xml fuelEvents = check io:fileReadXml(inputFilePath);
     
-    string[][] rows = [];
-    foreach int i in uniqueID {
-        int gas_fill_up_count = 0;
-        float total_fuel_cost = 0;
-        float total_gallons = 0;
-        int total_miles_accrued = 0;
-        int first_meter_reading = 0;
-        foreach Record record_c in RecordArray {
-            if (record_c.employee_id == i) {
-                if(gas_fill_up_count == 0)
-                {
-                    first_meter_reading = record_c.odometer_reading;
-                }
-                gas_fill_up_count = gas_fill_up_count + 1;
-                total_fuel_cost = total_fuel_cost + (record_c.gallons * record_c.gas_price);
-                total_gallons = total_gallons + record_c.gallons;
-                total_miles_accrued = record_c.odometer_reading - first_meter_reading;
-            }
-        }
-        //add the row to the rows array
-        rows.push([string `${i}`, string `${gas_fill_up_count}`, string `${total_fuel_cost}`, string `${total_gallons}`, string `${total_miles_accrued}`]);
+    Record[] fuelRecords = [];
+
+    // Iterate through each FuelEvent element in the XML and create a record object
+    foreach xml fuelEvent in fuelEvents/<FuelEvent> {
+        Record fuelRecord = {
+            employeeId: check int.convert(fuelEvent/<EmployeeId>.getTextValue()),
+            odometerReading: check int.convert(fuelEvent/<OdometerReading>.getTextValue()),
+            gallons: check float.convert(fuelEvent/<Gallons>.getTextValue()),
+            gasPrice: check float.convert(fuelEvent/<GasPrice>.getTextValue())
+        };
+        fuelRecords.push(fuelRecord);
     }
-    check io:fileWriteCsv(outputFilePath, rows);
+    // Print the array of record objects
+    io:println(fuelRecords.toString());
+    
+   
+    
 }
 
 public function main() {
-    string inputFilePath = "./resources/example01_input.csv";
-    string outputFilePath = "./resources/example01_output_test.csv";
+    string inputFilePath = "./resources/example01_input.xml";
+    string outputFilePath = "./rresources/example01_output_test.xml";
     error? processFuelRecordsResult = processFuelRecords(inputFilePath,outputFilePath);
     if processFuelRecordsResult is error {
         io:println("Error occurred while processing fuel records: ", processFuelRecordsResult);
