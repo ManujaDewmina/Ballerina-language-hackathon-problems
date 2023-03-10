@@ -1,93 +1,91 @@
+
 import ballerina/io;
-import ballerina/regex;
 
 //album record
 type Record record {
-    int employeeId;
-    int odometerReading;
-    float gallons;
-    float gasPrice;
+    string employeeId;
+    int gasFillUpCount;
+    float totalFuelCost;
+    float totalGallons;
+    int totalMilesAccrued;
 };
 
 
 function processFuelRecords(string inputFilePath, string outputFilePath) returns error? {
-    //open the input file
-    json content = check io:fileReadJson(inputFilePath);
+    //create a new xml file
+    //xml newXml = xml `<records></records>`;
 
-    Record[] records = [];
+    //read the input xml file
+    xml xmlData = check io:fileReadXml(inputFilePath);
 
-    //make it string add match to map array with out iterrating json object
-    string contentString = content.toString();
+    //create string array
+    string[] uniqueId = [];
 
-    //split the string and assign it to record array
-    string[] contentArray = regex:split(contentString, "},");
-    foreach var item in contentArray {
-        string[] recordArray = regex:split(item, ",");
-        string[] a = regex:split(recordArray[0].trim(), ":");
-        string[] b = regex:split(recordArray[1].trim(), ":");
-        string[] c = regex:split(recordArray[2].trim(), ":");
-
-        
-        string lastElement = recordArray[3].trim();
-        if (lastElement.endsWith("}]")) {
-            lastElement = lastElement.substring(0, lastElement.length() - 2);
-        }
-        string[] d = regex:split(lastElement, ":");
-
-
-        Record record_a = {
-            employeeId: check int:fromString(a[1]),
-            odometerReading: check int:fromString(b[1]),
-            gallons: check float:fromString(c[1]),
-            gasPrice: check float:fromString(d[1])
-        };
-        records.push(record_a);
-    }
-
-    int[] uniqueID = [];
-
-    foreach Record record_b in records {
+    //iterate through the xml file to get uniqui id array
+    foreach var item in xmlData.elementChildren() {
+        string id = check item.employeeId;
         boolean isDuplicate = false;
-        foreach int j in uniqueID {
-            if (record_b.employeeId == j) {
+        foreach string j in uniqueId {
+            if (id == j) {
                 isDuplicate = true;
                 break;
             }
         }
         if (!isDuplicate) {
-            uniqueID.push(record_b.employeeId);
+            uniqueId.push(id);
         }
     }
-    //Details for each employee ID
-    string[][] rows = [];
-    foreach int i in uniqueID {
-        int gas_fill_up_count = 0;
-        float total_fuel_cost = 0;
-        float total_gallons = 0;
-        int total_miles_accrued = 0;
+
+    //store data in records for each unique id
+    Record[][] records = [];
+    foreach string id in uniqueId {
+        Record[] record_a = [];
+        int count = 0;
+        float totalFuelCost = 0;
+        float totalGallons = 0;
+        int totalMilesAccrued = 0;
         int first_meter_reading = 0;
-        foreach Record record_c in records {
-            if (record_c.employeeId == i) {
-                if(gas_fill_up_count == 0)
+        foreach var item in xmlData.elementChildren() {
+            string employeeId = check item.employeeId;
+            if (id == employeeId) {
+                if(count == 0)
                 {
-                    first_meter_reading = record_c.odometerReading;
+                    first_meter_reading = check int:fromString(item.elementChildren().get(0).data());
                 }
-                gas_fill_up_count = gas_fill_up_count + 1;
-                total_fuel_cost = total_fuel_cost + (record_c.gallons * record_c.gasPrice);
-                total_gallons = total_gallons + record_c.gallons;
-                total_miles_accrued = record_c.odometerReading - first_meter_reading;
-            }
+                count = count + 1;
+                totalFuelCost = totalFuelCost + check float:fromString(item.elementChildren().get(1).data())*check float:fromString(item.elementChildren().get(2).data());
+                totalGallons = totalGallons + check float:fromString(item.elementChildren().get(1).data());
+                totalMilesAccrued = check int:fromString(item.elementChildren().get(0).data()) - first_meter_reading;
+            }            
         }
-        //add the row to the rows array
-        rows.push([string `${i}`, string `${gas_fill_up_count}`, string `${total_fuel_cost}`, string `${total_gallons}`, string `${total_miles_accrued}`]);
+        Record rec = {
+                    employeeId: id,
+                    gasFillUpCount: count,
+                    totalFuelCost: totalFuelCost,
+                    totalGallons: totalGallons,
+                    totalMilesAccrued: totalMilesAccrued
+                };
+                record_a.push(rec);
+        records.push(record_a);
     }
-    check io:fileWriteJson(outputFilePath, rows);
+
+    //print the records
+    // foreach Record[] record_b in records {
+    //     foreach Record record_a in record_b {
+    //         io:println("Employee ID: ", record_a.employeeId);
+    //         io:println("Gas Fill Up Count: ", record_a.gasFillUpCount);
+    //         io:println("Total Fuel Cost: ", record_a.totalFuelCost);
+    //         io:println("Total Gallons: ", record_a.totalGallons);
+    //         io:println("Total Miles Accrued: ", record_a.totalMilesAccrued);
+    //     }
+    // }
+    
 }
 
 //main function
 public function main() {
-    string inputFilePath = "./resources/example02_input.json";
-    string outputFilePath = "./resources/output02.json";
+    string inputFilePath = "./resources/example02_input.xml";
+    string outputFilePath = "./resources/output01.xml";
     var result = processFuelRecords(inputFilePath, outputFilePath);
     if (result is error) {
         io:println("Error: ", result);
