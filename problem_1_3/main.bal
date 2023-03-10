@@ -42,20 +42,24 @@ function processFuelRecords(string inputFilePath, string outputFilePath) returns
         records.push(record_a);
     }
 
-    int[] uniqueID = [];
+    int[] uniqueIDnotSort = [];
 
     foreach Record record_b in records {
         boolean isDuplicate = false;
-        foreach int j in uniqueID {
+        foreach int j in uniqueIDnotSort {
             if (record_b.employeeId == j) {
                 isDuplicate = true;
                 break;
             }
         }
         if (!isDuplicate) {
-            uniqueID.push(record_b.employeeId);
+            uniqueIDnotSort.push(record_b.employeeId);
         }
     }
+
+    //sort the uniqueID array
+    int[] uniqueID = uniqueIDnotSort.sort();
+
     //Details for each employee ID
     string[][] rows = [];
     foreach int i in uniqueID {
@@ -79,5 +83,23 @@ function processFuelRecords(string inputFilePath, string outputFilePath) returns
         //add the row to the rows array
         rows.push([string `${i}`, string `${gas_fill_up_count}`, string `${total_fuel_cost}`, string `${total_gallons}`, string `${total_miles_accrued}`]);
     }
-    check io:fileWriteJson(outputFilePath, rows);
+
+    //create json array
+    json[] jsonArr = [];
+
+    //convert the rows array to json
+    foreach string[] row in rows {
+        json jsonOutput={ 
+                        "employeeId" : check int:fromString(row[0]), 
+                        "gas_fill_up_count" : check int:fromString(row[1]), 
+                        "total_fuel_cost" : check float:fromString(row[2]), 
+                        "total_gallons" : check float:fromString(row[3]), 
+                        "total_miles_accrued" : check int:fromString(row[4]) 
+                    };
+        //add the json to the json array
+        jsonArr.push(jsonOutput);
+    }
+
+    //write the json array to the output file
+    check io:fileWriteJson(outputFilePath, jsonArr);
 }

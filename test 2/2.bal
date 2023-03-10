@@ -1,97 +1,115 @@
 import ballerina/io;
+import ballerina/regex;
 
+//album record
 type Record record {
-    string employeeId;
-    string gasFillUpCount;
-    string totalFuelCost;
-    string totalGallons;
-    string totalMilesAccrued;
+    int employeeId;
+    int odometerReading;
+    float gallons;
+    float gasPrice;
 };
 
 function processFuelRecords(string inputFilePath, string outputFilePath) returns error? {
 
-    //read the input xml file
-    xml xmlData = check io:fileReadXml(inputFilePath);
+    //open the input file
+    json content = check io:fileReadJson(inputFilePath);
 
-    //create string array
-    string[] uniqueId = [];
+    Record[] records = [];
 
-    //iterate through the xml file to get uniqui id array
-    foreach var item in xmlData.elementChildren() {
-        string id = check item.employeeId;
+    //make it string add match to map array with out iterrating json object
+    string contentString = content.toString();
+
+    //split the string and assign it to record array
+    string[] contentArray = regex:split(contentString, "},");
+    foreach var item in contentArray {
+        string[] recordArray = regex:split(item, ",");
+        string[] a = regex:split(recordArray[0].trim(), ":");
+        string[] b = regex:split(recordArray[1].trim(), ":");
+        string[] c = regex:split(recordArray[2].trim(), ":");
+
+        
+        string lastElement = recordArray[3].trim();
+        if (lastElement.endsWith("}]")) {
+            lastElement = lastElement.substring(0, lastElement.length() - 2);
+        }
+        string[] d = regex:split(lastElement, ":");
+
+
+        Record record_a = {
+            employeeId: check int:fromString(a[1]),
+            odometerReading: check int:fromString(b[1]),
+            gallons: check float:fromString(c[1]),
+            gasPrice: check float:fromString(d[1])
+        };
+        records.push(record_a);
+    }
+
+    int[] uniqueIDnotSort = [];
+
+    foreach Record record_b in records {
         boolean isDuplicate = false;
-        foreach string j in uniqueId {
-            if (id == j) {
+        foreach int j in uniqueIDnotSort {
+            if (record_b.employeeId == j) {
                 isDuplicate = true;
                 break;
             }
         }
         if (!isDuplicate) {
-            uniqueId.push(id);
+            uniqueIDnotSort.push(record_b.employeeId);
         }
     }
 
-    //store data in records for each unique id
-    Record[][] records = [];
-    foreach string id in uniqueId {
-        Record[] record_a = [];
-        int count = 0;
-        float totalFuelCost = 0;
-        float totalGallons = 0;
-        int totalMilesAccrued = 0;
+    //sort the uniqueID array
+    int[] uniqueID = uniqueIDnotSort.sort();
+
+    //Details for each employee ID
+    string[][] rows = [];
+    foreach int i in uniqueID {
+        int gas_fill_up_count = 0;
+        float total_fuel_cost = 0;
+        float total_gallons = 0;
+        int total_miles_accrued = 0;
         int first_meter_reading = 0;
-        foreach var item in xmlData.elementChildren() {
-            string employeeId = check item.employeeId;
-            if (id == employeeId) {
-                if(count == 0)
+        foreach Record record_c in records {
+            if (record_c.employeeId == i) {
+                if(gas_fill_up_count == 0)
                 {
-                    first_meter_reading = check int:fromString(item.elementChildren().get(0).data());
+                    first_meter_reading = record_c.odometerReading;
                 }
-                count = count + 1;
-                totalFuelCost = totalFuelCost + check float:fromString(item.elementChildren().get(1).data())*check float:fromString(item.elementChildren().get(2).data());
-                totalGallons = totalGallons + check float:fromString(item.elementChildren().get(1).data());
-                totalMilesAccrued = check int:fromString(item.elementChildren().get(0).data()) - first_meter_reading;
-            }            
+                gas_fill_up_count = gas_fill_up_count + 1;
+                total_fuel_cost = total_fuel_cost + (record_c.gallons * record_c.gasPrice);
+                total_gallons = total_gallons + record_c.gallons;
+                total_miles_accrued = record_c.odometerReading - first_meter_reading;
+            }
         }
-        Record rec = {
-                    employeeId: id,
-                    gasFillUpCount: count.toString(),
-                    totalFuelCost: totalFuelCost.toString(),
-                    totalGallons: totalGallons.toString(),
-                    totalMilesAccrued: totalMilesAccrued.toString()
-                };
-                record_a.push(rec);
-        records.push(record_a);
+        //add the row to the rows array
+        rows.push([string `${i}`, string `${gas_fill_up_count}`, string `${total_fuel_cost}`, string `${total_gallons}`, string `${total_miles_accrued}`]);
     }
 
-    //convert 2D array to 1D array
-    Record[] record_c = [];
+    //create json array
+    json[] jsonArr = [];
 
-    //iterate through the records array to get the final records
-    foreach Record[] record_b in records {
-        foreach Record record_a in record_b {
-            Record rec = {
-                    employeeId: record_a.employeeId,
-                    gasFillUpCount: record_a.gasFillUpCount,
-                    totalFuelCost: record_a.totalFuelCost,
-                    totalGallons: record_a.totalGallons,
-                    totalMilesAccrued: record_a.totalMilesAccrued
-                };
-                record_c.push(rec);
-        }
+    //convert the rows array to json
+    foreach string[] row in rows {
+        json jsonOutput={ 
+                        "employeeId" : check int:fromString(row[0]), 
+                        "gas_fill_up_count" : check int:fromString(row[1]), 
+                        "total_fuel_cost" : check float:fromString(row[2]), 
+                        "total_gallons" : check float:fromString(row[3]), 
+                        "total_miles_accrued" : check int:fromString(row[4]) 
+                    };
+        //add the json to the json array
+        jsonArr.push(jsonOutput);
     }
 
-    //create a new xml file
-    xml newXml = xml `<s:employeeFuelRecords xmlns:s="http://www.so2w.org">${from var {employeeId, gasFillUpCount, totalFuelCost, totalGallons, totalMilesAccrued} in record_c select xml`<s:employeeFuelRecord employeeId="${employeeId}"><s:gasFillUpCount>${gasFillUpCount}</s:gasFillUpCount><s:totalFuelCost>${totalFuelCost}</s:totalFuelCost><s:totalGallons>${totalGallons}</s:totalGallons><s:totalMilesAccrued>${totalMilesAccrued}</s:totalMilesAccrued></s:employeeFuelRecord>`}</s:employeeFuelRecords>`;
-    
-    //write the new xml file
-    check io:fileWriteXml(outputFilePath, newXml);
+    //write the json array to the output file
+    check io:fileWriteJson(outputFilePath, jsonArr);
 }
 
 //main function
 public function main() {
-    string inputFilePath = "./resources/example02_input.xml";
-    string outputFilePath = "./resources/output02.xml";
+    string inputFilePath = "./resources/example02_input.json";
+    string outputFilePath = "./resources/output02.json";
     var result = processFuelRecords(inputFilePath, outputFilePath);
     if (result is error) {
         io:println("Error: ", result);
