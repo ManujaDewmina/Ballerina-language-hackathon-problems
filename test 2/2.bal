@@ -1,19 +1,14 @@
-
 import ballerina/io;
 
-//album record
 type Record record {
     string employeeId;
-    int gasFillUpCount;
-    float totalFuelCost;
-    float totalGallons;
-    int totalMilesAccrued;
+    string gasFillUpCount;
+    string totalFuelCost;
+    string totalGallons;
+    string totalMilesAccrued;
 };
 
-
 function processFuelRecords(string inputFilePath, string outputFilePath) returns error? {
-    //create a new xml file
-    //xml newXml = xml `<records></records>`;
 
     //read the input xml file
     xml xmlData = check io:fileReadXml(inputFilePath);
@@ -60,32 +55,43 @@ function processFuelRecords(string inputFilePath, string outputFilePath) returns
         }
         Record rec = {
                     employeeId: id,
-                    gasFillUpCount: count,
-                    totalFuelCost: totalFuelCost,
-                    totalGallons: totalGallons,
-                    totalMilesAccrued: totalMilesAccrued
+                    gasFillUpCount: count.toString(),
+                    totalFuelCost: totalFuelCost.toString(),
+                    totalGallons: totalGallons.toString(),
+                    totalMilesAccrued: totalMilesAccrued.toString()
                 };
                 record_a.push(rec);
         records.push(record_a);
     }
 
-    //print the records
-    // foreach Record[] record_b in records {
-    //     foreach Record record_a in record_b {
-    //         io:println("Employee ID: ", record_a.employeeId);
-    //         io:println("Gas Fill Up Count: ", record_a.gasFillUpCount);
-    //         io:println("Total Fuel Cost: ", record_a.totalFuelCost);
-    //         io:println("Total Gallons: ", record_a.totalGallons);
-    //         io:println("Total Miles Accrued: ", record_a.totalMilesAccrued);
-    //     }
-    // }
+    //convert 2D array to 1D array
+    Record[] record_c = [];
+
+    //iterate through the records array to get the final records
+    foreach Record[] record_b in records {
+        foreach Record record_a in record_b {
+            Record rec = {
+                    employeeId: record_a.employeeId,
+                    gasFillUpCount: record_a.gasFillUpCount,
+                    totalFuelCost: record_a.totalFuelCost,
+                    totalGallons: record_a.totalGallons,
+                    totalMilesAccrued: record_a.totalMilesAccrued
+                };
+                record_c.push(rec);
+        }
+    }
+
+    //create a new xml file
+    xml newXml = xml `<s:employeeFuelRecords xmlns:s="http://www.so2w.org">${from var {employeeId, gasFillUpCount, totalFuelCost, totalGallons, totalMilesAccrued} in record_c select xml`<s:employeeFuelRecord employeeId="${employeeId}"><s:gasFillUpCount>${gasFillUpCount}</s:gasFillUpCount><s:totalFuelCost>${totalFuelCost}</s:totalFuelCost><s:totalGallons>${totalGallons}</s:totalGallons><s:totalMilesAccrued>${totalMilesAccrued}</s:totalMilesAccrued></s:employeeFuelRecord>`}</s:employeeFuelRecords>`;
     
+    //write the new xml file
+    check io:fileWriteXml(outputFilePath, newXml);
 }
 
 //main function
 public function main() {
     string inputFilePath = "./resources/example02_input.xml";
-    string outputFilePath = "./resources/output01.xml";
+    string outputFilePath = "./resources/output02.xml";
     var result = processFuelRecords(inputFilePath, outputFilePath);
     if (result is error) {
         io:println("Error: ", result);
