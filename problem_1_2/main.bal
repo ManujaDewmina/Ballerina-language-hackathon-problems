@@ -8,7 +8,7 @@ type Record record {
 };
 
 function processFuelRecords(string inputFilePath, string outputFilePath) returns error? {
-    // Read the CSV file as a stream of records.
+        // Read the CSV file as a stream of records.
     string[][] input = check io:fileReadCsv(inputFilePath);
 
     Record[] RecordArray = [];
@@ -22,21 +22,24 @@ function processFuelRecords(string inputFilePath, string outputFilePath) returns
         RecordArray.push(Record_a);
     }
 
-    int[] uniqueID = [];
+    int[] uniqueIDnotSort = [];
 
     //find the unique employee IDs
     foreach Record record_b in RecordArray {
         boolean isDuplicate = false;
-        foreach int j in uniqueID {
+        foreach int j in uniqueIDnotSort {
             if (record_b.employee_id == j) {
                 isDuplicate = true;
                 break;
             }
         }
         if (!isDuplicate) {
-            uniqueID.push(record_b.employee_id);
+            uniqueIDnotSort.push(record_b.employee_id);
         }
     }
+    
+    //sort the uniqueID array
+    int[] uniqueID = uniqueIDnotSort.sort();
     
     //Details for each employee ID
     string[][] rows = [];
