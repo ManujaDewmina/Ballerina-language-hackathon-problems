@@ -1,78 +1,100 @@
 import ballerina/io;
 
 type Record record {
-    int employee_id;
-    int odometer_reading;
-    float gallons;
-    float gas_price;
+    string employeeId;
+    string gasFillUpCount;
+    string totalFuelCost;
+    string totalGallons;
+    string totalMilesAccrued;
 };
 
 function processFuelRecords(string inputFilePath, string outputFilePath) returns error? {
 
-    // Read the CSV file as a stream of records.
-    string[][] input = check io:fileReadCsv(inputFilePath);
+    //read the input xml file
+    xml xmlData = check io:fileReadXml(inputFilePath);
 
-    Record[] RecordArray = [];
+    //create string array
+    string[] uniqueIdnotSort = [];
 
-    // Convert the input stream of records to an array of records.
-    foreach string[] row in input {
-        Record Record_a =  {employee_id: check int:fromString(row[0]),
-                            odometer_reading: check int:fromString(row[1]),
-                            gallons : check float:fromString(row[2]),
-                            gas_price: check float:fromString(row[3])};
-        RecordArray.push(Record_a);
-    }
-
-    int[] uniqueIDnotSort = [];
-
-    //find the unique employee IDs
-    foreach Record record_b in RecordArray {
+    //iterate through the xml file to get uniqui id array
+    foreach var item in xmlData.elementChildren() {
+        string id = check item.employeeId;
         boolean isDuplicate = false;
-        foreach int j in uniqueIDnotSort {
-            if (record_b.employee_id == j) {
+        foreach string j in uniqueIdnotSort {
+            if (id == j) {
                 isDuplicate = true;
                 break;
             }
         }
         if (!isDuplicate) {
-            uniqueIDnotSort.push(record_b.employee_id);
+            uniqueIdnotSort.push(id);
         }
     }
-    
-    //sort the uniqueID array
-    int[] uniqueID = uniqueIDnotSort.sort();
-    
-    //Details for each employee ID
-    string[][] rows = [];
-    foreach int i in uniqueID {
-        int gas_fill_up_count = 0;
-        float total_fuel_cost = 0;
-        float total_gallons = 0;
-        int total_miles_accrued = 0;
+
+    //sort the unique id array
+    string[] uniqueId = uniqueIdnotSort.sort();
+
+    //store data in records for each unique id
+    Record[][] records = [];
+    foreach string id in uniqueId {
+        Record[] record_a = [];
+        int count = 0;
+        float totalFuelCost = 0;
+        float totalGallons = 0;
+        int totalMilesAccrued = 0;
         int first_meter_reading = 0;
-        foreach Record record_c in RecordArray {
-            if (record_c.employee_id == i) {
-                if(gas_fill_up_count == 0)
+        foreach var item in xmlData.elementChildren() {
+            string employeeId = check item.employeeId;
+            if (id == employeeId) {
+                if(count == 0)
                 {
-                    first_meter_reading = record_c.odometer_reading;
+                    first_meter_reading = check int:fromString(item.elementChildren().get(0).data());
                 }
-                gas_fill_up_count = gas_fill_up_count + 1;
-                total_fuel_cost = total_fuel_cost + (record_c.gallons * record_c.gas_price);
-                total_gallons = total_gallons + record_c.gallons;
-                total_miles_accrued = record_c.odometer_reading - first_meter_reading;
-            }
+                count = count + 1;
+                totalFuelCost = totalFuelCost + check float:fromString(item.elementChildren().get(1).data())*check float:fromString(item.elementChildren().get(2).data());
+                totalGallons = totalGallons + check float:fromString(item.elementChildren().get(1).data());
+                totalMilesAccrued = check int:fromString(item.elementChildren().get(0).data()) - first_meter_reading;
+            }            
         }
-        //add the row to the rows array
-        rows.push([string `${i}`, string `${gas_fill_up_count}`, string `${total_fuel_cost}`, string `${total_gallons}`, string `${total_miles_accrued}`]);
+        Record rec = {
+                    employeeId: id,
+                    gasFillUpCount: count.toString(),
+                    totalFuelCost: totalFuelCost.toString(),
+                    totalGallons: totalGallons.toString(),
+                    totalMilesAccrued: totalMilesAccrued.toString()
+                };
+                record_a.push(rec);
+        records.push(record_a);
     }
-    //write the rows array to the output file
-    check io:fileWriteCsv(outputFilePath, rows);
+
+    //convert 2D array to 1D array
+    Record[] record_c = [];
+
+    //iterate through the records array to get the final records
+    foreach Record[] record_b in records {
+        foreach Record record_a in record_b {
+            Record rec = {
+                    employeeId: record_a.employeeId,
+                    gasFillUpCount: record_a.gasFillUpCount,
+                    totalFuelCost: record_a.totalFuelCost,
+                    totalGallons: record_a.totalGallons,
+                    totalMilesAccrued: record_a.totalMilesAccrued
+                };
+                record_c.push(rec);
+        }
+    }
+
+    //create a new xml file
+    xml newXml = xml `<s:employeeFuelRecords xmlns:s="http://www.so2w.org">${from var {employeeId, gasFillUpCount, totalFuelCost, totalGallons, totalMilesAccrued} in record_c select xml`<s:employeeFuelRecord employeeId="${employeeId}"><s:gasFillUpCount>${gasFillUpCount}</s:gasFillUpCount><s:totalFuelCost>${totalFuelCost}</s:totalFuelCost><s:totalGallons>${totalGallons}</s:totalGallons><s:totalMilesAccrued>${totalMilesAccrued}</s:totalMilesAccrued></s:employeeFuelRecord>`}</s:employeeFuelRecords>`;
+    
+    //write the new xml file
+    check io:fileWriteXml(outputFilePath, newXml);
 }
 
 //main function
 public function main() {
-    string inputFilePath = "./resources/example02_input.csv";
-    string outputFilePath = "./resources/output02.csv";
+    string inputFilePath = "./resources/example02_input.xml";
+    string outputFilePath = "./resources/output02.xml";
     var result = processFuelRecords(inputFilePath, outputFilePath);
     if (result is error) {
         io:println("Error: ", result);

@@ -9,26 +9,29 @@ type Record record {
 };
 
 function processFuelRecords(string inputFilePath, string outputFilePath) returns error? {
-        //read the input xml file
+    //read the input xml file
     xml xmlData = check io:fileReadXml(inputFilePath);
 
     //create string array
-    string[] uniqueId = [];
+    string[] uniqueIdnotSort = [];
 
     //iterate through the xml file to get uniqui id array
     foreach var item in xmlData.elementChildren() {
         string id = check item.employeeId;
         boolean isDuplicate = false;
-        foreach string j in uniqueId {
+        foreach string j in uniqueIdnotSort {
             if (id == j) {
                 isDuplicate = true;
                 break;
             }
         }
         if (!isDuplicate) {
-            uniqueId.push(id);
+            uniqueIdnotSort.push(id);
         }
     }
+
+    //sort the unique id array
+    string[] uniqueId = uniqueIdnotSort.sort();
 
     //store data in records for each unique id
     Record[][] records = [];
