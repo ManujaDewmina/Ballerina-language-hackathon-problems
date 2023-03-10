@@ -20,5 +20,6 @@ function allocateCubicles(int[] requests) returns int[] {
             uniqueRequests.push(i);
         }
     }
+    //sort the array
     return uniqueRequests.sort();
 }
