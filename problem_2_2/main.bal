@@ -14,6 +14,7 @@ type Record record {
 
 
 function addPayments(string dbFilePath, string paymentFilePath) returns error|int[] {
+    //database file path
     string filePath = dbFilePath + ".mv.db";
 
     //chek if the database file exists
