@@ -1,0 +1,6 @@
+2023-03-15 00:35:35 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "HIGH_PAYMENT" not found; SQL statement:
+SELECT * FROM HIGH_PAYMENT WHERE Amount >  ?  [42102-206]
+2023-03-15 00:37:10 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "HIGH_PAYMENT" not found; SQL statement:
+SELECT * FROM HIGH_PAYMENT WHERE Amount >  ?  [42102-206]
