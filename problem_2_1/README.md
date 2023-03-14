@@ -3,7 +3,7 @@
 ## Problem Statement
 Go Figure is planning to maintain all petty cash payment information to employees in a database. You are helping the finance department of Go Figure to implement these functionalities. Since Go Figure is expanding its operations, adding new employees to the system is a common requirement due to new hires.
 
-Your task is to add the provided new employee details to the `Employee` table of the database and return the value of the auto-generated `employee_id` column without issuing another query to the database to find it. If an error occurs during the execution, `-1` should be returned.
+Your task is to add the provided new employee details to the `Employee` table of the database and return the value of the auto-generated `employee_id` column without issuing another query to the database to find it. If an error occurs during the execution, `-1` should be returned. 
 
 ## Database Details
 
