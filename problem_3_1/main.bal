@@ -1,9 +1,12 @@
 import ballerina/http;
-// import ballerina/io;
 
 # The exchange rate API base URL
 configurable string apiUrl = "http://localhost:8080";
 
+type Rates record {
+    string base;
+    map<decimal> rates;
+};
 
 # Convert provided salary to local currency
 #
@@ -13,41 +16,27 @@ configurable string apiUrl = "http://localhost:8080";
 # + return - Salary in local currency or error
 public function convertSalary(decimal salary, string sourceCurrency, string localCurrency) returns decimal|error {
 
-    // client endpoint configuration
-    http:Client exchangeRateClient = check new http:Client (apiUrl);
+    // Create the HTTP client
+    http:Client httpClient = check new (apiUrl);
+    // Get the exchange rates
+    // Get the exchange rates
+    http:Response response = check httpClient->get("/rates/" + sourceCurrency);
+    if (response.statusCode != 200) {
+        return error("Failed to get exchange rates: " + response.statusCode.toString());
+    }
 
-    // http request
-    http:Request req = new;
+    json ratesJson = check response.getJsonPayload();
 
-    // set path param
-    req.rawPath = "/rates/{baseCurrency}";
+    Rates rates = check ratesJson.cloneWithType(Rates);
 
-//     // set query param
-//     map<string> queryParam = { "to": localCurrency };
-//     req.setQueryParams(queryParam);
+    // Get the exchange rate for the local currency
+    decimal? rate = rates.rates[localCurrency];
+    if (rate is ()) {
+        return error("Failed to get exchange rate for " + localCurrency);
+    }
 
-//     // set path param
-//     map<string> pathParam = { "baseCurrency": sourceCurrency };
-//     req.setPathParam(pathParam);
-
-//    http:Response|error response = exchangeRateClient->get(req);
-
-//     // handle response
-//     if (response is http:Response) {
-//         if (response.statusCode == 200) {
-//             json|error payload = response.getJsonPayload();
-//             if (payload is json) {
-//                 decimal rate = <decimal>(<json>payload).rates[localCurrency];
-//                 return salary * rate;
-//             } else {
-//                 return payload;
-//             }
-//         } else {
-//             return error("Error occurred while calling the backend service");
-//         }
-//     } else {
-//         return response;
-//     }
+    // Calculate the salary in local currency
+    return salary * rate;
 }
 
 
