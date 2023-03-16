@@ -1,7 +1,9 @@
 import ballerina/http;
+// import ballerina/io;
 
 # The exchange rate API base URL
 configurable string apiUrl = "http://localhost:8080";
+
 
 # Convert provided salary to local currency
 #
@@ -10,31 +12,42 @@ configurable string apiUrl = "http://localhost:8080";
 # + localCurrency - Employee's local currency
 # + return - Salary in local currency or error
 public function convertSalary(decimal salary, string sourceCurrency, string localCurrency) returns decimal|error {
-    
-    //http client to call the exchange rate API
-    http:Client exchangeRateClient = check new (apiUrl);
 
-    // Create the request message with the provided salary and source currency
-    http:Request request = new;
+    // client endpoint configuration
+    http:Client exchangeRateClient = check new http:Client (apiUrl);
 
-    // Set the JSON payload
-    json payload = {
-        "salary": salary,
-        "sourceCurrency": sourceCurrency
-    };
+    // http request
+    http:Request req = new;
 
-    request.setJsonPayload(payload);
+    // set path param
+    req.rawPath = "/rates/{baseCurrency}";
 
-    /// Send a POST request to the exchange rate API
-    http:Response response = check exchangeRateClient->post("/exchange-rate", request);
+//     // set query param
+//     map<string> queryParam = { "to": localCurrency };
+//     req.setQueryParams(queryParam);
 
-    // Extract the JSON payload from the response
-    json responsePayload = check response.getJsonPayload();
+//     // set path param
+//     map<string> pathParam = { "baseCurrency": sourceCurrency };
+//     req.setPathParam(pathParam);
 
-    // Extract the converted salary from the JSON payload
-    decimal convertedSalary = check responsePayload.convertedSalary;
+//    http:Response|error response = exchangeRateClient->get(req);
 
-    // Return the converted salary
-    return convertedSalary;
+//     // handle response
+//     if (response is http:Response) {
+//         if (response.statusCode == 200) {
+//             json|error payload = response.getJsonPayload();
+//             if (payload is json) {
+//                 decimal rate = <decimal>(<json>payload).rates[localCurrency];
+//                 return salary * rate;
+//             } else {
+//                 return payload;
+//             }
+//         } else {
+//             return error("Error occurred while calling the backend service");
+//         }
+//     } else {
+//         return response;
+//     }
 }
+
 
