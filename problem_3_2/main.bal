@@ -1,6 +1,5 @@
 import ims/billionairehub;
 import ballerina/io;
-
 configurable string clientId = ?; 
 configurable string clientSecret = ?;
 
