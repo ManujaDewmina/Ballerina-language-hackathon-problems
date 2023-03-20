@@ -30,7 +30,7 @@ service /activities on new http:Listener(steps_port_eval) {
         json response = {
             "activities-steps": check data.stepsActivity
         };
-        
+
         self.count += 1;
         if self.count % 3 == 0 {
             self.count = 0;

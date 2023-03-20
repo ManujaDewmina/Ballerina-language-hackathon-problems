@@ -1,8 +1,57 @@
+import ballerina/http;
+
 function findTheGift(string userID, string 'from, string to) returns Gift|error {
-    // Write your answer here.
-    // A `Gift` record is initialized to make the given function compilable.
-    Gift gift = {eligible: true, 'from, to, score: 99};
-    return gift;
+
+    final http:Client fifitEp = check new("http://localhost:9091/activities",retryConfig = { interval: 3,count: 3},timeout = 10);
+
+    string u = "/steps/user/"+userID+"/from/"+'from+"/to/"+to;
+
+    http:Response response = check fifitEp->get(u);
+    if (response.statusCode == 500) {
+        response = check fifitEp->get(u);
+    }
+
+    // get json payload from the response
+    json payload = check response.getJsonPayload();
+
+    //store the steps in Activities record
+    Activities activities = check payload.cloneWithType(Activities);
+    int totalSteps = 0;
+    foreach var item in activities.activities\-steps {
+        totalSteps = totalSteps + item.value;
+    }
+
+    http:FailoverClient insureEveryoneEp = check new ({
+        timeout: 10,
+        failoverCodes: [500],
+        interval: 3,
+        // Define a set of HTTP Clients that are targeted for failover.
+        targets: [
+            {url: "http://localhost:9092/insurance1"},
+            {url: "http://localhost:9092/insurance2"}
+        ]
+    });
+
+    http:Response response2 = check insureEveryoneEp->get("/user/"+userID);
+ 
+    json payload2 = check response2.getJsonPayload();
+
+    int age = check payload2.user.age;
+
+    int score_final = 29030/((100-age)/10);
+    if (score_final < SILVER_BAR) {
+        Gift gift = {eligible: false, 'from, to, score: score_final};
+        return gift;
+    } else if (score_final < GOLD_BAR) {
+        Gift gift = {eligible: true, 'from, to, score: score_final, details: {message: "Congratulations! You have won the SILVER gift!", 'type: SILVER}};
+        return gift;
+    } else if (score_final < PLATINUM_BAR) {
+        Gift gift = {eligible: true, 'from, to, score: score_final, details: {message: "Congratulations! You have won the GOLD gift!", 'type: GOLD}};
+        return gift;
+    } else {
+        Gift gift = {eligible: true, 'from, to, score: score_final, details: {'type: PLATINUM, message: "Congratulations! You have won the PLATINUM gift!"}};
+        return gift;
+    }
 }
 
 type Activities record {
