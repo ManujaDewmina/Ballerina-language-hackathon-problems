@@ -6,13 +6,13 @@ import problem_3_3.back_ends as _;
 }
 function testFindTheGiftSimple() returns error? {
     json expected = {
-        "eligible": true,
-        "score": 29030,
-        "from": "2022-01-01",
-        "to": "2022-03-31",
+        "eligible":true,
+        "score":29030,
+        "from":"2022-01-01",
+        "to":"2022-03-31",
         "details": {
-            "type": "PLATINUM",
-            "message": "Congratulations! You have won the PLATINUM gift!"
+            "type":"PLATINUM",
+            "message":"Congratulations! You have won the PLATINUM gift!"
         }
     };
     Gift|error response = findTheGiftSimple("1", "2022-01-01", "2022-03-31");
