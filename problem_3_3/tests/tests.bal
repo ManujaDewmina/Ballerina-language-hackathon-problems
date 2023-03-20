@@ -19,6 +19,7 @@ function testFindTheGiftSimple() returns error? {
     if response is Gift {
         test:assertTrue(response == expected);
     } else {
+
         test:assertFail();
     }
 }
