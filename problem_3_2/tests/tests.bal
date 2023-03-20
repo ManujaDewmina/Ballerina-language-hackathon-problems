@@ -1,5 +1,5 @@
 import ballerina/test;
-
+import ballerina/io;
 @test:Config {
     dataProvider: validData,
     groups: ["sample"]
@@ -7,6 +7,7 @@ import ballerina/test;
 function testGetTopXBillionaires(string[] countries, int 'limit, string[] expected) {
     string[]|error actual = getTopXBillionaires(countries, 'limit);
     if actual is error {
+        io:print(actual);
         test:assertFail("Failed to fetch top billionaires");
     }
     test:assertEquals(actual, expected);
