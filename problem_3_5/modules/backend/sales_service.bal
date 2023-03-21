@@ -35,6 +35,7 @@ isolated service /sales on httpEP {
         if data is json[] {
             foreach json item in data {
                 Sales sales = check item.fromJsonWithType(Sales);
+                
                 self.sales.add(sales);
             }
         }
