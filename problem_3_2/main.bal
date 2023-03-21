@@ -1,45 +1,34 @@
 import ims/billionairehub;
 import ballerina/io;
 
-configurable string clientId = ?; 
-configurable string clientSecret = ?;
-
-//record to store the billionaire details
-type BillionaireRec record {
+type bill record {
     string name;
     float netWorth;
+    string country;
+    string industry;
 };
+# Client ID and Client Secret to connect to the billionaire API
+configurable string clientId = ?;
+configurable string clientSecret = ?;
 
 public function getTopXBillionaires(string[] countries, int x) returns string[]|error {
     // Create the client connector
     billionairehub:Client cl = check new ({auth: {clientId, clientSecret}});
 
-    //create an array to store the top x billionaires
-    string[] AllBillionaires = [];
-    
-    // record array
-    BillionaireRec[] billionairesRec = [];
+    //string[] AllBillionaires = [];
 
-    //loop through the countries and get the top x billionaires
-    foreach string country in countries {
-        //get the billionaires from the API
-        io:print(country);
-        billionairehub:Billionaire[] billionaires = check cl->getBillionaires(country);
+    bill[] list = [];
 
-        //loop through the billionaires and add them to the record
-        foreach billionairehub:Billionaire billionaire in billionaires {
-            BillionaireRec billionaireRec = {name: billionaire.name, netWorth: billionaire.netWorth};
-            billionairesRec.push(billionaireRec);
-        }   
-    }
-
-    //loop through the record array and get the top x billionaires
-    foreach BillionaireRec billionaire in billionairesRec {
-        if (billionairesRec.length() < x) {
-            AllBillionaires.push(billionaire.name);
+    // Iterate through the countries\
+    foreach var country in countries {
+        // Get the billionaires for the country
+       billionairehub:Billionaire[] billionaires = check cl->getBillionaires(country);
+        // Iterate through the billionaires
+        foreach var billionaire in billionaires {
+            // Add the billionaire to the list
+            io:print(billionaire.name);
+            list.push({name: billionaire.name, netWorth: billionaire.netWorth, country: billionaire.country, industry: billionaire.industry});
         }
     }
-
-    //strimg array
-    return AllBillionaires;
+    return [];
 }
