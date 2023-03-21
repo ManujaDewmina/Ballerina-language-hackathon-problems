@@ -1,6 +1,5 @@
 import problem_3_5.customers;
 import problem_3_5.sales;
-// import ballerina/io;
 import ballerina/http;
 
 type Q "Q1"|"Q2"|"Q3"|"Q4";
@@ -23,11 +22,6 @@ function findTopXCustomers(Quarter[] quarters, int x) returns customers:Customer
     Cust[] cust = [];
     
     foreach var quarter in quarters {
-        http:Client customersClient = check new("http://localhost:8080/customers");
-        http:Response customersResponse = check customersClient->/["1"];
-        
-        json customersJson = check customersResponse.getJsonPayload();
-        
         http:Client salesClient = check new("http://localhost:8080/sales");
         http:Response salesResponse = check salesClient->/(year=quarter[0], quarter=quarter[1]);
 
@@ -58,14 +52,41 @@ function findTopXCustomers(Quarter[] quarters, int x) returns customers:Customer
             
         }
     }	
+    
+    //decimal array to hold the ammounts
+    decimal[] ammounts = [];
 
-    //topx array to hold the top x customers
-    
-    //get 2 highest ammount customers from cust array
+    //add the ammounts to the array
     foreach var item in cust {
-        
+        ammounts.push(item.ammount);
     }
-    
-    
-    return [];
+
+    //sort the ammounts array
+    decimal[] sort = ammounts.sort();
+
+    //get the highest ammounts
+    decimal[] highest = sort.slice(sort.length()-x, sort.length());
+
+
+    //get the customers with the highest ammounts
+    string[] topX = [];
+    foreach var item in highest.reverse() {
+        foreach var c in cust {
+            if (c.ammount == item) {
+                topX.push(c.id);
+            }
+        }
+    }
+
+    //iterate through the customers and get the customer details
+    customers:Customer[] topCustomers = [];
+    foreach var id in topX {
+        http:Client customerClient = check new("http://localhost:8080/customers");
+        http:Response customerResponse = check customerClient->/[id];
+        json customerJson = check customerResponse.getJsonPayload();
+        customers:Customer customer = check customerJson.cloneWithType(customers:Customer);
+        topCustomers.push(customer);
+    }
+
+    return topCustomers;
 }
