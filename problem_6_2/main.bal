@@ -1,4 +1,6 @@
-// Introduce your solution here.
+import ballerina/io;
+import ballerina/websocket;
+
 type RiderDetails record {|
     string time;
     string rider;
@@ -14,3 +16,7 @@ type DriverDetails record {|
 |};
 
 table<DriverDetails> dailyDrivers = table [];
+
+public function main() returns error? {
+    tes
+}

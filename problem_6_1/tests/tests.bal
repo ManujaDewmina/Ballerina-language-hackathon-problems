@@ -16,7 +16,7 @@ function testPickUpNegotiationSuccess() returns error? {
     test:assertEquals(res, ["U", "T"]);
     [websocket:Caller?, string[]] [currentCaller, desiredPickUpLocations] = shuttle:pickUpRequests.get(name);
     test:assertFalse(currentCaller is ());
-    test:assertEquals(desiredPickUpLocations.length(), 1);
+    test:assertEquals(desiredPickUpLocations.length(), 1, msg = desiredPickUpLocations.toString());
 }
 
 @test:Config {
@@ -32,8 +32,8 @@ function testPickUpNegotiationFailure() {
     test:assertEquals(name, "jo");
     test:assertTrue(res is error);
     [websocket:Caller?, string[]] [currentCaller, desiredPickUpLocations] = shuttle:pickUpRequests.get(name);
-    test:assertTrue(currentCaller is ());
-    test:assertEquals(desiredPickUpLocations.length(), 1);
+    test:assertTrue(currentCaller is (), msg = currentCaller.toString());
+    test:assertEquals(desiredPickUpLocations.length(), 1, msg = desiredPickUpLocations.toString());
 }
 
 @test:Config {

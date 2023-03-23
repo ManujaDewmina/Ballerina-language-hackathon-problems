@@ -1,1 +1,5 @@
-// Introduce your solution here.
+import ballerina/io;
+
+public function main() {
+    io:println("Hello, World!");
+}
