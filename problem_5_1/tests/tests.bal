@@ -1,6 +1,7 @@
 import ballerina/test;
 import problem_5_1.back_ends as _;
 import ballerina/http;
+import ballerina/io;
 
 @test:Config {
     groups: ["sample"]
@@ -11,6 +12,7 @@ function testGqlWithSecondsService() returns error? {
         "query": "{\n  sleepSummary(ID: \"1\", timeunit:SECONDS) {\n    date\n    duration\n    levels {\n      deep\n      wake\n    }\n  }\n}"
     };
     json response = check gqlEp->post("/graphql", payload);
+    io:print(response);
     test:assertEquals(response.data, expectedSeconds);
 }
 
